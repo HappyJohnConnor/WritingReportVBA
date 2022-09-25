@@ -7,7 +7,7 @@ End Sub
 Sub create_sheet()
     'import Yahoo Finance CSV
     ActiveWorkbook.Queries.Add Name:="yahoof", Formula:= _
-        "let" & Chr(13) & "" & Chr(10) & "    Source = Csv.Document(File.Contents(""D:\Users\author\Download\quotes.csv""),[Delimiter="","", Columns=16, Encoding=1252, QuoteStyle=QuoteStyle.None])," & Chr(13) & "" & Chr(10) & "    #""Promoted Headers"" = Table.PromoteHeaders(Source, [PromoteAllScalars=true])," & Chr(13) & "" & Chr(10) & "    #""Changed Type"" = Table.TransformColumnTypes(#""Promoted Headers"",{{""Symbol"", type text}, {""Current Price"", ty" & _
+        "let" & Chr(13) & "" & Chr(10) & "    Source = Csv.Document(File.Contents(""C:\Users\mm_in\Downloads\quotes.csv""),[Delimiter="","", Columns=16, Encoding=1252, QuoteStyle=QuoteStyle.None])," & Chr(13) & "" & Chr(10) & "    #""Promoted Headers"" = Table.PromoteHeaders(Source, [PromoteAllScalars=true])," & Chr(13) & "" & Chr(10) & "    #""Changed Type"" = Table.TransformColumnTypes(#""Promoted Headers"",{{""Symbol"", type text}, {""Current Price"", ty" & _
         "pe number}, {""Date"", type date}, {""Time"", type text}, {""Change"", type number}, {""Open"", type number}, {""High"", type number}, {""Low"", type number}, {""Volume"", Int64.Type}, {""Trade Date"", type text}, {""Purchase Price"", type text}, {""Quantity"", type text}, {""Commission"", type text}, {""High Limit"", type text}, {""Low Limit"", type text}, {""Comme" & _
         "nt"", type text}})" & Chr(13) & "" & Chr(10) & "in" & Chr(13) & "" & Chr(10) & "    #""Changed Type"""
     ActiveWorkbook.Worksheets.Add
@@ -88,12 +88,12 @@ Sub write_report()
     Dim i As Integer
     Dim items() As Variant
     Dim report As String
-    Dim stockList As Variant
+    ReDim stock_pairs(50, 2)
     Dim stock_idx As String
     Dim stock_name As String
-    
-    stockList = [{"^DJI","ダウ"; "^GSPC","SP"; "^IXIC","Nasdaq"; "^RUT", "Russell"; "JPY=X, "JPY"; "CNY=X", "オフショア人民元CNY"; "RUB=X", "ロシアルーブルUSDRUB"; "EURUSD=X", "ユーロEURUSD"; "^SOX", "SOX指数"; "^VIX", "VIX"; "^VVIX", "VIXのボラを示すVVIX"}]
-    
+    Dim path As String
+    path = "D:\Users\author\Document\Stock Workspace\Workspace\StockPair.csv"
+    stock_pairs = loadCSV(path)
     Worksheets("YahooFinance").Activate
     Columns("J:P").ClearContents
     
@@ -105,11 +105,10 @@ Sub write_report()
         Cells(i, 11) = Join(items)
     Next i
     
-    
     'replace index with stock name
-    For i = LBound(stockList, 1) To UBound(stockList, 1)
-        stock_idx = stockList(i, 1)
-        stock_name = stockList(i, 2)
+    For i = LBound(stock_pairs, 1) To UBound(stock_pairs, 1)
+        stock_idx = stock_pairs(i, 0)
+        stock_name = stock_pairs(i, 1)
         Range("K2:K39").Replace stock_idx, stock_name, LookAt:=xlPart
     Next i
     
@@ -133,7 +132,6 @@ Sub write_report()
     Worksheets("YahooFinance").Cells(42, 11).Value = Join(item)
     
 End Sub
-
 
 Function getFormattedItem(item) As Variant
     Dim formatted As String

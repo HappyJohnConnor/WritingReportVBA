@@ -1,0 +1,31 @@
+^DJI,ダウ
+^GSPC,SP
+^IXIC,Nasdaq
+^RUT,Russell
+JPY=X,JPY
+CNY=X,オフショア人民元CNY
+RUB=X,ロシアルーブルUSDRUB
+EURUSD=X,ユーロEURUSD
+^VIX,VIX
+^VVIX,VIXのボラを示すVVIX
+^VXN,Nasdaq100 のVIX、VXN
+^TNX,10年債金利
+XLE,エネルギーETF XLE
+UNG,天然ガスETF UNG
+^SOX,SOX指数
+DSX,DSX
+DAC,DAC
+MAERSK-B.CO,世界最大の海運会社MAERSK
+SBLK,SBLK
+ZIM,ZIM
+^TRAN,米国運輸株指数 TRAN
+^HXC,Nasdaqが日々公表している中国株ハイテク指数HXC
+EWJ,日本株ETF EWJ
+0700.HK,テンセント
+9988.HK,アリババ
+000001.SS,上海
+NIY=F,大阪N225先物
+^HSI,HIS
+^STI,STI
+^TWII,台湾
+^STOXX50E,ユーロ50
