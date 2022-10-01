@@ -95,6 +95,7 @@ Sub write_report()
     Dim stock_idx As String
     Dim stock_name As String
     Dim path As String
+    Dim report_for_td As String
     'D:\Users\author\Document\Stock Workspace\Workspace\StockPair.csv
     path = "D:\Users\author\Document\Stock Workspace\Workspace\StockPair.csv"
     stock_pairs = loadCSV(path)
@@ -103,26 +104,27 @@ Sub write_report()
     
     last_row = Cells(Rows.Count, 1).End(xlUp).Row
     'make change% column
-    Range(Cells(2, 9), Cells(last_row, 9)).Formula2 = "=E2 / (B2 - E2) * 100"
+    Range(Cells(2, 10), Cells(last_row, 10)).Formula2 = "=E2 / (B2 - E2) * 100"
     
     'make sentence
     For i = 2 To last_row
-        items = Array(Cells(i, 1) & ":", Round(Cells(i, 2), 2) & ",", getFormattedItem(Cells(i, 5)) & ",", getFormattedItem(Cells(i, 10)) & "%,")
+        items = Array(Cells(i, 1) & ":", Round(Cells(i, 2), 2), getFormattedItem(Cells(i, 5)), getFormattedItem(Cells(i, 10)) & "%, ")
         Cells(i, 11) = Join(items)
     Next i
+    Cells(last_row + 1, 11) = get_reprot_from_TradingView()
     
     'replace index with stock name
     For i = LBound(stock_pairs, 1) To UBound(stock_pairs, 1)
         stock_idx = stock_pairs(i, 0)
         stock_name = stock_pairs(i, 1)
-        Range(Cells(2, 10), Cells(last_row, 10)).Replace stock_idx, stock_name, LookAt:=xlPart
+        Range(Cells(2, 11), Cells(last_row + 1, 11)).Replace stock_idx, stock_name, LookAt:=xlPart
     Next i
     
     'connect sentence
-    For i = 2 To last_row
+    For i = 2 To last_row + 1
         report = report & Cells(i, 11)
     Next i
-    Cells(last_row + 1, 11).Value = report
+    Cells(last_row + 3, 11).Value = report
     
     'count rising index
     Worksheets("SOX30").Activate
@@ -130,12 +132,12 @@ Sub write_report()
     With WorksheetFunction
         rise_idx = .CountIf(Range("F2:F31"), ">0")
     End With
-    Worksheets("YahooFinance").Cells(last_row + 2, 11).Value = "SOX‚Ìã¸–Á•¿”: " & rise_idx
+    Worksheets("YahooFinance").Cells(last_row + 4, 11).Value = "SOX‚Ìã¸–Á•¿”: " & rise_idx
     
     'write
     Worksheets("US2Y").Activate
     item = Array("2”NÂ‹à—˜: ", Cells(2, 3), "% ", getFormattedItem2(Cells(2, 4)), " (", getFormattedItem2(Cells(2, 5) * 100), "%)")
-    Worksheets("YahooFinance").Cells(last_row + 3, 11).Value = Join(item)
+    Worksheets("YahooFinance").Cells(last_row + 5, 11).Value = Join(item)
     
 End Sub
 
