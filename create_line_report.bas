@@ -96,11 +96,28 @@ Sub write_report()
     Dim stock_name As String
     Dim path As String
     Dim report_for_td As String
-    'D:\Users\author\Document\Stock Workspace\Workspace\StockPair.csv
-    path = "D:\Users\author\Document\Stock Workspace\Workspace\StockPair.csv"
+    Dim tv_stock_ary() As Variant
+    tv_stock_ary = Array("TVC-MOVE", "DJ-REIT", "INDEX-BDI")
+    start_driver
+    'D:\Users\author\OneDrive\Stock Workspace\Workspace\StockPair.csv
+    path = "D:\Users\author\OneDrive\Stock Workspace\Workspace\StockPair.csv"
     stock_pairs = loadCSV(path)
     Worksheets("YahooFinance").Activate
     Columns("J:P").ClearContents
+    
+    Dim close_price As Double
+    Dim last_price As Double
+    For Each idx In tv_stock_ary
+        last_row = Cells(Rows.Count, 1).End(xlUp).Row
+        Call fetch_tradingview_data(close_price, last_price, idx)
+        delta_price = close_price - last_price
+        'change_per = delta_price / last_price * 100
+        Cells(last_row + 1, 1).Value = idx
+        Cells(last_row + 1, 2).Value = close_price
+        Cells(last_row + 1, 5).Value = delta_price
+        'words_array = Array(idx, ":", Round(close_price, 2), getFormattedItem(delta_price), getFormattedItem(change_per) & "%, ")
+        'report = report & Join(words_array)
+    Next idx
     
     last_row = Cells(Rows.Count, 1).End(xlUp).Row
     'make change% column
@@ -108,23 +125,27 @@ Sub write_report()
     
     'make sentence
     For i = 2 To last_row
-        items = Array(Cells(i, 1) & ":", Round(Cells(i, 2), 2), getFormattedItem(Cells(i, 5)), getFormattedItem(Cells(i, 10)) & "%, ")
+        If Cells(i, 1) Like "*=X" Or Cells(i, 1) = "^TNX" Then
+            items = Array(Cells(i, 1) & ":", Round(Cells(i, 2), 3), getFormattedItem(Cells(i, 5), 3), getFormattedItem(Cells(i, 10), 3) & "%, ")
+        Else
+            items = Array(Cells(i, 1) & ":", Round(Cells(i, 2), 2), getFormattedItem(Cells(i, 5), 2), getFormattedItem(Cells(i, 10), 2) & "%, ")
+        End If
         Cells(i, 11) = Join(items)
     Next i
-    Cells(last_row + 1, 11) = get_reprot_from_TradingView()
+    'Cells(last_row + 1, 11) = get_reprot_from_TradingView()
     
     'replace index with stock name
     For i = LBound(stock_pairs, 1) To UBound(stock_pairs, 1)
         stock_idx = stock_pairs(i, 0)
         stock_name = stock_pairs(i, 1)
-        Range(Cells(2, 11), Cells(last_row + 1, 11)).Replace stock_idx, stock_name, LookAt:=xlPart
+        Range(Cells(2, 11), Cells(last_row, 11)).Replace stock_idx, stock_name, LookAt:=xlPart
     Next i
     
     'connect sentence
-    For i = 2 To last_row + 1
+    For i = 2 To last_row
         report = report & Cells(i, 11)
     Next i
-    Cells(last_row + 3, 11).Value = report
+    Cells(last_row + 1, 11).Value = report
     
     'count rising index
     Worksheets("SOX30").Activate
@@ -132,18 +153,26 @@ Sub write_report()
     With WorksheetFunction
         rise_idx = .CountIf(Range("F2:F31"), ">0")
     End With
-    Worksheets("YahooFinance").Cells(last_row + 4, 11).Value = "SOX‚Ìã¸–Á•¿”: " & rise_idx
+    Worksheets("YahooFinance").Cells(last_row + 2, 11).Value = "SOX‚Ìã¸–Á•¿”: " & rise_idx
     
     'write
     Worksheets("US2Y").Activate
     item = Array("2”NÂ‹à—˜: ", Cells(2, 3), "% ", getFormattedItem2(Cells(2, 4)), " (", getFormattedItem2(Cells(2, 5) * 100), "%)")
-    Worksheets("YahooFinance").Cells(last_row + 5, 11).Value = Join(item)
+    Worksheets("YahooFinance").Cells(last_row + 3, 11).Value = Join(item)
     
+    Dim pred_data As Variant
+    pred_data = fetch_cme_data()
+    For x = LBound(pred_data, 1) To UBound(pred_data, 1)
+        For y = LBound(pred_data, 2) To UBound(pred_data, 2)
+            Worksheets("YahooFinance").Cells(x + last_row + 4, y + 11).Value = pred_data(x, y)
+        Next
+    Next
+    close_driver
 End Sub
 
-Function getFormattedItem(item) As Variant
+Function getFormattedItem(item, round_num) As Variant
     Dim formatted As String
-    formatted = Round(item, 2)
+    formatted = Round(item, round_num)
     If formatted > 0 Then
         formatted = "+" & formatted
     End If
