@@ -1,4 +1,4 @@
-Attribute VB_Name = "Module1"
+Attribute VB_Name = "Module2"
 Sub main()
     create_sheet
     write_report
@@ -111,12 +111,9 @@ Sub write_report()
         last_row = Cells(Rows.Count, 1).End(xlUp).Row
         Call fetch_tradingview_data(close_price, last_price, idx)
         delta_price = close_price - last_price
-        'change_per = delta_price / last_price * 100
         Cells(last_row + 1, 1).Value = idx
         Cells(last_row + 1, 2).Value = close_price
         Cells(last_row + 1, 5).Value = delta_price
-        'words_array = Array(idx, ":", Round(close_price, 2), getFormattedItem(delta_price), getFormattedItem(change_per) & "%, ")
-        'report = report & Join(words_array)
     Next idx
     
     last_row = Cells(Rows.Count, 1).End(xlUp).Row
@@ -124,7 +121,7 @@ Sub write_report()
     Range(Cells(2, 10), Cells(last_row, 10)).Formula2 = "=E2 / (B2 - E2) * 100"
     
     'make sentence
-    For i = 2 To last_row
+    For i = 2 To get_last_row()
         If Cells(i, 1) Like "*=X" Or Cells(i, 1) = "^TNX" Then
             items = Array(Cells(i, 1) & ":", Round(Cells(i, 2), 3), getFormattedItem(Cells(i, 5), 3), getFormattedItem(Cells(i, 10), 3) & "%, ")
         Else
@@ -132,41 +129,58 @@ Sub write_report()
         End If
         Cells(i, 11) = Join(items)
     Next i
-    'Cells(last_row + 1, 11) = get_reprot_from_TradingView()
+    
+    'add US2Y
+    us2y_ary = Array("2”NÂ‹à—˜: ", Worksheets("US2Y").Cells(2, 3), "% ", getFormattedItem(Worksheets("US2Y").Cells(2, 4), 3), " (", getFormattedItem(Worksheets("US2Y").Cells(2, 5) * 100, 3), "%)")
+    Worksheets("YahooFinance").Activate
+    'us10y_row = Range("A1:K200").Find("^TNX", LookAt:=xlPart).Row
+    'Rows(us10y_row + 1).Insert
+    last_row = get_last_row()
+    Cells(last_row + 1, 11) = Join(us2y_ary)
+    Cells(last_row + 1, 1) = "US2Y"
+    
+    Dim stock_sort_ary As Variant
+    stock_sort_ary = Array(Array("^TNX", "US2Y", 1), Array("^TNX", "TVC-MOVE", 0))
+    For i = LBound(stock_sort_ary) To UBound(stock_sort_ary)
+        before_row = Range("A1:K200").Find(stock_sort_ary(i)(0), LookAt:=xlPart).Row
+        after_row = Range("A1:K200").Find(stock_sort_ary(i)(1), LookAt:=xlPart).Row
+        Rows(after_row).Cut
+        Rows(before_row + stock_sort_ary(i)(2)).Insert
+    Next
     
     'replace index with stock name
     For i = LBound(stock_pairs, 1) To UBound(stock_pairs, 1)
         stock_idx = stock_pairs(i, 0)
         stock_name = stock_pairs(i, 1)
-        Range(Cells(2, 11), Cells(last_row, 11)).Replace stock_idx, stock_name, LookAt:=xlPart
+        Range(Cells(2, 11), Cells(get_last_row(), 11)).Replace stock_idx, stock_name, LookAt:=xlPart
     Next i
     
     'connect sentence
-    For i = 2 To last_row
+    For i = 2 To get_last_row()
         report = report & Cells(i, 11)
     Next i
-    Cells(last_row + 1, 11).Value = report
+    Cells(get_last_row() + 1, 11).Value = report
     
     'count rising index
-    Worksheets("SOX30").Activate
+    'Worksheets("SOX30").Activate
     Dim rise_idx As Variant
     With WorksheetFunction
-        rise_idx = .CountIf(Range("F2:F31"), ">0")
+        rise_idx = .CountIf(Worksheets("SOX30").Range("F2:F31"), ">0")
     End With
-    Worksheets("YahooFinance").Cells(last_row + 2, 11).Value = "SOX‚Ìã¸–Á•¿”: " & rise_idx
+    Worksheets("YahooFinance").Cells(get_last_row() + 1, 11).Value = "SOX‚Ìã¸–Á•¿”: " & rise_idx
     
-    'write
-    Worksheets("US2Y").Activate
-    item = Array("2”NÂ‹à—˜: ", Cells(2, 3), "% ", getFormattedItem2(Cells(2, 4)), " (", getFormattedItem2(Cells(2, 5) * 100), "%)")
-    Worksheets("YahooFinance").Cells(last_row + 3, 11).Value = Join(item)
-    
+    last_row = get_last_row()
     Dim pred_data As Variant
     pred_data = fetch_cme_data()
-    For x = LBound(pred_data, 1) To UBound(pred_data, 1)
+    For x = LBound(pred_data, 1) + 1 To 4
         For y = LBound(pred_data, 2) To UBound(pred_data, 2)
-            Worksheets("YahooFinance").Cells(x + last_row + 4, y + 11).Value = pred_data(x, y)
+            Worksheets("YahooFinance").Cells(x + last_row, y + 10).Value = pred_data(x, y)
+            If x >= 3 And y = 1 Then
+                Worksheets("YahooFinance").Cells(x + last_row, y + 10).NumberFormatLocal = "yyyy/mm/dd"
+            End If
         Next
     Next
+    
     close_driver
 End Sub
 
@@ -179,12 +193,9 @@ Function getFormattedItem(item, round_num) As Variant
     getFormattedItem = formatted
 End Function
 
-Function getFormattedItem2(item) As Variant
-    Dim formatted As String
-    If item > 0 Then
-        formatted = "+" & item
-    End If
-    getFormattedItem2 = formatted
+Function get_last_row() As Long
+    get_last_row = Range("A1:K1").EntireColumn.Find("*", , , , 1, 2).Row
+    'get_last_row = Cells(Rows.Count, 1).End(xlUp).Row
 End Function
 
 'https://ateitexe.com/excel-vba-csv-to-multi-dimensional-array/
@@ -211,3 +222,5 @@ Function loadCSV(ByVal path As String) As Variant
   
   loadCSV = ary
 End Function
+
+
